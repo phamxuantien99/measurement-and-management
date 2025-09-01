@@ -1,0 +1,67 @@
+@media print {
+  @page {
+    size: A4;
+    margin-left: 6mm;
+    margin-right: 11mm; /* tăng thêm để tránh sát mép */
+    margin-top: 6mm;
+    margin-bottom: 6mm;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  footer {
+    display: inline-block;
+  }
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #fafafa;
+}
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+.invoice-container {
+  width: 210mm;
+  min-height: 280mm;
+  margin: auto;
+  background: white;
+  box-sizing: border-box;
+  border: 1px solid black;
+}
+
+.invoice-container th,
+.invoice-container tr,
+.invoice-container td {
+  @apply rounded-none;
+}
+
+.invoice-container th.capitalize {
+  white-space: unset;
+}
+
+.acknowledgement {
+  background-color: hsl(var(--b2, var(--b1)) / var(--tw-bg-opacity));
+}
+
+#page-number {
+  text-align: right;
+  font-weight: lighter;
+}
+
+table {
+  border-spacing: 0;
+}
+
+td,
+th {
+  border: 1px solid black;
+  text-align: center;
+}
