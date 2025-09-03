@@ -96,7 +96,7 @@ const ConfirmMeasurement = () => {
   const handleSearch = (value: string) => setSearchQuery(value);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error>({
+    useInfiniteQuery({
       queryKey: [
         "dataMeasurementReportConfirm",
         { search: debouncedSearchValue, filterCheckbox: selected },
@@ -195,7 +195,7 @@ const ConfirmMeasurement = () => {
   };
 
   const AllReportMeasurementConfirm =
-    data?.pages.flatMap((page) => page.founds) || [];
+    data?.pages.flatMap((page: any) => page.founds) || [];
 
   return (
     <div className="p-4 bg-white shadow rounded-md">

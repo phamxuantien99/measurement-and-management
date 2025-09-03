@@ -76,7 +76,7 @@ const UnconfirmServey = () => {
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error>({
+    useInfiniteQuery({
       queryKey: ["dataSurveyReportUnconfirm", { search: debouncedSearchValue }],
       queryFn: fetchDataSurveyReport,
       getNextPageParam: (lastPage: ApiResponse) => {
@@ -113,7 +113,7 @@ const UnconfirmServey = () => {
   }, [handleObserver, data]);
 
   const AllReportSurveyUnconfirm =
-    data?.pages.flatMap((page) => page.founds) || [];
+    data?.pages.flatMap((page: any) => page.founds) || [];
 
   return (
     <div className="p-4 bg-white shadow rounded-md">
@@ -133,7 +133,10 @@ const UnconfirmServey = () => {
             Total:
           </Typography>{" "}
           <Typography component="span" color="primary" fontWeight={500}>
-            {data?.pages.reduce((acc, page) => acc + page?.founds?.length, 0)}
+            {data?.pages.reduce(
+              (acc: any, page: any) => acc + page?.founds?.length,
+              0
+            )}
           </Typography>{" "}
           /{" "}
           <Typography component="span" color="textPrimary">

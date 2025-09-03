@@ -23,31 +23,13 @@ const headerKey = [
   "telephone_number",
 ];
 
-interface ProjectCode {
-  project_number: string;
-  client_name: string;
-  location: string;
-  person_contact: string;
-  telephone_number: string;
-}
-
-interface ApiResponse {
-  confirm_projects: ProjectCode[];
-  search_options: {
-    ordering: string;
-    page: number;
-    page_size: number;
-    total_count: number;
-  };
-}
-
 const fetchDataProjectCode = async ({
   pageParam = 1,
   queryKey,
 }: {
   pageParam?: number;
   queryKey: [string, { search?: string }];
-}): Promise<ApiResponse> => {
+}): Promise<any> => {
   const [_key, { search }] = queryKey;
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_measurement_report",
@@ -68,10 +50,10 @@ const ProjectCodeMeasurement = () => {
   const debouncedSearchValue = useDebounce(searchQuery, 500);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error, ApiResponse>({
+    useInfiniteQuery<any, Error, any>({
       queryKey: ["projectCodeMeasurement", { search: debouncedSearchValue }],
       queryFn: fetchDataProjectCode,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage: any) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
@@ -104,7 +86,8 @@ const ProjectCodeMeasurement = () => {
     };
   }, [handleObserver, data]);
 
-  const projects = data?.pages.flatMap((page) => page.confirm_projects) || [];
+  const projects =
+    data?.pages.flatMap((page: any) => page.confirm_projects) || [];
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);

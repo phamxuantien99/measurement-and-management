@@ -47,10 +47,18 @@ function PDFConfirmSurvey() {
       return response.data;
     } catch (error) {
       console.error("data survey report summary project session", error);
-      console.error(
-        "data survey report detail summary project session",
-        error.response.data
-      );
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        (error as any).response &&
+        "data" in (error as any).response
+      ) {
+        console.error(
+          "data survey report detail summary project session",
+          (error as any).response.data
+        );
+      }
       throw error;
     }
   };

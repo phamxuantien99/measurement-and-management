@@ -20,7 +20,7 @@ export interface Group {
 }
 
 export const useGroups = () => {
-  return useQuery<Group[], Error>({
+  return useQuery({
     queryKey: ["groups"],
     queryFn: async () => {
       const response = await apiAxios.get(

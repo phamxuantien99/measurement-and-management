@@ -37,16 +37,6 @@ interface User {
   password: string;
 }
 
-interface ApiResponse {
-  founds: User[];
-  search_options: {
-    ordering: string;
-    page: number;
-    page_size: number;
-    total_count: number;
-  };
-}
-
 const activeUser = [
   {
     text: "Active",
@@ -82,7 +72,7 @@ const fetchUsers = async ({
     string,
     { search?: string; filterActive?: boolean; filterAdmin?: boolean }
   ];
-}): Promise<ApiResponse> => {
+}) => {
   const [_key, { search, filterActive, filterAdmin }] = queryKey;
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/user",
@@ -90,7 +80,6 @@ const fetchUsers = async ({
       params: {
         page: pageParam,
         page_size: 20,
-
         ...(search ? { user_name__eq: search } : {}),
         ...(filterActive !== undefined ? { is_active: filterActive } : {}),
         ...(filterAdmin !== undefined ? { is_superuser: filterAdmin } : {}),
@@ -123,19 +112,18 @@ const AdminComponent: React.FC = () => {
 
   const navigate = useNavigate();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error>({
+    useInfiniteQuery({
       queryKey: [
         "users",
         { search: debouncedSearch, filterActive, filterAdmin },
       ],
       queryFn: fetchUsers,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage: any) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
     });
-
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const handleObserver = useCallback(
@@ -192,7 +180,7 @@ const AdminComponent: React.FC = () => {
     setLoadingSaveUser(true);
 
     try {
-      const response = await apiAxios.post(
+      await apiAxios.post(
         `https://ec2api.deltatech-backend.com/api/v1/user/assign?user_id=${idUserPermission}`,
         selectedGroupIds
       );
@@ -201,7 +189,8 @@ const AdminComponent: React.FC = () => {
       setLoadingSaveUser(false);
       setIdUserPermission(0);
       setSelectedGroupIds([]);
-      queryClient.invalidateQueries({ queryKey: ["users", "userPermissions"] });
+      queryClient.invalidateQueries({ queryKey: ["userPermissions"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (error) {
       console.error("Failed to add permission:", error);
       setLoadingSaveUser(false);
@@ -242,9 +231,11 @@ const AdminComponent: React.FC = () => {
             editUser.id
           }?${queryParams.toString()}`;
 
-      const response = isAddMode
-        ? await apiAxios.post(url, selectedGroupIds)
-        : await apiAxios.put(url);
+      if (isAddMode) {
+        await apiAxios.post(url, selectedGroupIds);
+      } else {
+        await apiAxios.put(url);
+      }
 
       toast.success(
         isAddMode ? "User added successfully!" : "User updated successfully!"
@@ -308,7 +299,7 @@ const AdminComponent: React.FC = () => {
     setSelectedGroupIds([]);
   };
 
-  const allUsers = data?.pages.flatMap((page) => page?.founds) || [];
+  const allUsers = data?.pages.flatMap((page: any) => page?.founds) || [];
 
   return (
     <div className="bg-[#0d75be]">
@@ -366,7 +357,7 @@ const AdminComponent: React.FC = () => {
               </Typography>{" "}
               <Typography component="span" color="primary" fontWeight={500}>
                 {data?.pages.reduce(
-                  (acc, page) => acc + page?.founds?.length,
+                  (acc: any, page: any) => acc + page?.founds?.length,
                   0
                 )}
               </Typography>{" "}
@@ -418,6 +409,7 @@ const AdminComponent: React.FC = () => {
                       ))}
                     </select>
                   </th>
+                  <th className="py-2 px-3 border text-center">Permissions</th>
 
                   <th className="py-2 px-3 border text-center">Actions</th>
                 </tr>
@@ -456,6 +448,9 @@ const AdminComponent: React.FC = () => {
                       </td>
                       <td className="py-2 px-3 border text-center">
                         {user?.is_active ? "✔️" : "❌"}
+                      </td>
+                      <td className="py-2 px-3 border text-center">
+                        {user?.groups.map((group: any) => group.id).join(", ")}
                       </td>
                       <td className="py-2 px-3 border text-center">
                         <IconButton

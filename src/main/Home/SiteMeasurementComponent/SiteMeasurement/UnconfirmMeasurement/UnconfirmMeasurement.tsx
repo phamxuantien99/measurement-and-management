@@ -42,16 +42,6 @@ const headerKey = [
   "opening_height",
 ];
 
-interface ApiResponse {
-  founds: any;
-  search_options: {
-    ordering: string;
-    page: number;
-    page_size: number;
-    total_count: number;
-  };
-}
-
 const fetchDataMeasurementReport = async ({
   pageParam = 1,
   confirm_status = "unconfirmed",
@@ -60,7 +50,7 @@ const fetchDataMeasurementReport = async ({
   pageParam?: number;
   confirm_status: string;
   queryKey: [string, { search?: string }];
-}): Promise<ApiResponse> => {
+}): Promise<any> => {
   const [_key, { search }] = queryKey;
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/measurement_report",
@@ -158,13 +148,13 @@ const UnconfirmMeasurement = () => {
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error>({
+    useInfiniteQuery({
       queryKey: [
         "dataMeasurementReportUnconfirmed",
         { search: debouncedSearchValue },
       ],
       queryFn: fetchDataMeasurementReport,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage: any) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
@@ -198,7 +188,7 @@ const UnconfirmMeasurement = () => {
   }, [handleObserver, data]);
 
   const AllReportMeasurementUnconfirm =
-    data?.pages.flatMap((page) => page.founds) || [];
+    data?.pages.flatMap((page: any) => page.founds) || [];
 
   return (
     <div className="p-4 bg-white shadow rounded-md">
@@ -218,7 +208,10 @@ const UnconfirmMeasurement = () => {
             Total:
           </Typography>{" "}
           <Typography component="span" color="primary" fontWeight={500}>
-            {data?.pages.reduce((acc, page) => acc + page?.founds?.length, 0)}
+            {data?.pages.reduce(
+              (acc: any, page: any) => acc + page?.founds?.length,
+              0
+            )}
           </Typography>{" "}
           /{" "}
           <Typography component="span" color="textPrimary">

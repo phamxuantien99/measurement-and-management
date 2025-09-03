@@ -1,5 +1,5 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { QueryFunctionContext, useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BsEyeFill } from "react-icons/bs";
 import { Link } from "react-router-dom";
@@ -43,10 +43,10 @@ interface ApiResponse {
 const fetchDataProjectCode = async ({
   pageParam = 1,
   queryKey,
-}: {
-  pageParam?: number;
-  queryKey: [string, { search?: string }];
-}): Promise<ApiResponse> => {
+}: QueryFunctionContext<
+  [string, { search?: string }],
+  number
+>): Promise<ApiResponse> => {
   const [_key, { search }] = queryKey;
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_survey_report",
@@ -67,7 +67,7 @@ const ProjectCodeServey = () => {
   const debouncedSearchValue = useDebounce(searchQuery, 500);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<ApiResponse, Error, ApiResponse>({
+    useInfiniteQuery({
       queryKey: ["dataTotalProduct", { search: debouncedSearchValue }],
       queryFn: fetchDataProjectCode,
       getNextPageParam: (lastPage: ApiResponse) => {

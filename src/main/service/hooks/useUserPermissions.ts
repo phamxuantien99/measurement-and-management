@@ -11,7 +11,7 @@ export interface Permission {
 }
 
 export const useUserPermissions = (userId: number) => {
-  return useQuery<Permission[]>({
+  return useQuery<any[]>({
     queryKey: ["userPermissions", userId],
     queryFn: async () => {
       const response = await apiAxios.get(
