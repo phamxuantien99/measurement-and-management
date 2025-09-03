@@ -48,20 +48,27 @@ interface ApiResponse {
 
 const fetchDataMeasurementReport = async ({
   pageParam = 1,
-  confirm_status = "confirm",
   queryKey,
 }: {
   pageParam?: number;
-  confirm_status: string;
-  queryKey: [string, { search?: string; filterCheckbox?: boolean | null }];
+  queryKey: [
+    string,
+    {
+      search?: string;
+      filterCheckbox?: boolean | null;
+      confirm_status?: string;
+    }
+  ];
 }): Promise<ApiResponse> => {
-  const [_key, { search, filterCheckbox }] = queryKey;
+  const [_key, { search, filterCheckbox, confirm_status = "confirm" }] =
+    queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/measurement_report",
     {
       params: {
         page: pageParam,
-        confirm_status: confirm_status,
+        confirm_status,
         page_size: 20,
         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
         ...(filterCheckbox !== undefined
@@ -70,6 +77,7 @@ const fetchDataMeasurementReport = async ({
       },
     }
   );
+
   return res.data;
 };
 
@@ -96,13 +104,31 @@ const ConfirmMeasurement = () => {
   const handleSearch = (value: string) => setSearchQuery(value);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
+    useInfiniteQuery<
+      any,
+      Error,
+      any,
+      [
+        string,
+        {
+          search?: string;
+          filterCheckbox?: boolean | null;
+          confirm_status?: string;
+        }
+      ],
+      number
+    >({
       queryKey: [
         "dataMeasurementReportConfirm",
-        { search: debouncedSearchValue, filterCheckbox: selected },
+        {
+          search: debouncedSearchValue,
+          filterCheckbox: selected,
+          confirm_status: "confirm",
+        },
       ],
       queryFn: fetchDataMeasurementReport,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      initialPageParam: 1,
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;

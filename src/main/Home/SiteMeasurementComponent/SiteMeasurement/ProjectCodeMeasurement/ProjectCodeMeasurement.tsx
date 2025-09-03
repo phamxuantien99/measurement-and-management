@@ -23,14 +23,38 @@ const headerKey = [
   "telephone_number",
 ];
 
+// const fetchDataProjectCode = async ({
+//   pageParam = 1,
+//   queryKey,
+// }: {
+//   pageParam?: number;
+//   queryKey: [string, { search?: string }];
+// }): Promise<any> => {
+//   const [_key, { search }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_measurement_report",
+//     {
+//       params: {
+//         page: pageParam,
+//         page_size: 20,
+//         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
+
+type ProjectCodeQueryKey = [string, { search?: string }];
+
 const fetchDataProjectCode = async ({
   pageParam = 1,
   queryKey,
 }: {
   pageParam?: number;
-  queryKey: [string, { search?: string }];
+  queryKey: ProjectCodeQueryKey;
 }): Promise<any> => {
   const [_key, { search }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_measurement_report",
     {
@@ -41,6 +65,7 @@ const fetchDataProjectCode = async ({
       },
     }
   );
+
   return res.data;
 };
 
@@ -50,14 +75,21 @@ const ProjectCodeMeasurement = () => {
   const debouncedSearchValue = useDebounce(searchQuery, 500);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery<any, Error, any>({
+    useInfiniteQuery<
+      any, // Data mỗi page
+      Error, // Error type
+      any, // Select type (nếu không dùng thì giống như data)
+      ProjectCodeQueryKey, // Query key type
+      number // PageParam type
+    >({
       queryKey: ["projectCodeMeasurement", { search: debouncedSearchValue }],
       queryFn: fetchDataProjectCode,
-      getNextPageParam: (lastPage: any) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
 
   const observerRef = useRef<HTMLTableRowElement | null>(null);

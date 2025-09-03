@@ -63,17 +63,50 @@ function formatLabel(text: string): string {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
+// const fetchUsers = async ({
+//   pageParam = 1,
+//   queryKey,
+// }: {
+//   pageParam?: number;
+//   queryKey: [
+//     string,
+//     { search?: string; filterActive?: boolean; filterAdmin?: boolean }
+//   ];
+// }) => {
+//   const [_key, { search, filterActive, filterAdmin }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/user",
+//     {
+//       params: {
+//         page: pageParam,
+//         page_size: 20,
+//         ...(search ? { user_name__eq: search } : {}),
+//         ...(filterActive !== undefined ? { is_active: filterActive } : {}),
+//         ...(filterAdmin !== undefined ? { is_superuser: filterAdmin } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
+
+type UsersQueryKey = [
+  string,
+  {
+    search?: string;
+    filterActive?: boolean;
+    filterAdmin?: boolean;
+  }
+];
+
 const fetchUsers = async ({
   pageParam = 1,
   queryKey,
 }: {
   pageParam?: number;
-  queryKey: [
-    string,
-    { search?: string; filterActive?: boolean; filterAdmin?: boolean }
-  ];
-}) => {
+  queryKey: UsersQueryKey;
+}): Promise<any> => {
   const [_key, { search, filterActive, filterAdmin }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/user",
     {
@@ -86,6 +119,7 @@ const fetchUsers = async ({
       },
     }
   );
+
   return res.data;
 };
 
@@ -112,18 +146,30 @@ const AdminComponent: React.FC = () => {
 
   const navigate = useNavigate();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
+    useInfiniteQuery<
+      any, // kiểu dữ liệu trả về của mỗi page
+      Error, // kiểu lỗi
+      any, // kiểu dữ liệu sau khi select (nếu không dùng thì giống với dòng 1)
+      UsersQueryKey, // kiểu của queryKey
+      number // kiểu của pageParam
+    >({
       queryKey: [
         "users",
-        { search: debouncedSearch, filterActive, filterAdmin },
+        {
+          search: debouncedSearch,
+          filterActive,
+          filterAdmin,
+        },
       ],
       queryFn: fetchUsers,
-      getNextPageParam: (lastPage: any) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
+
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const handleObserver = useCallback(

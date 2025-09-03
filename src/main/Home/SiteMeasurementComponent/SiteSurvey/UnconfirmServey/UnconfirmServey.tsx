@@ -42,28 +42,57 @@ interface ApiResponse {
   };
 }
 
+// const fetchDataSurveyReport = async ({
+//   pageParam = 1,
+//   queryKey,
+// }: {
+//   pageParam?: number;
+//   queryKey: [string, { search?: string }];
+// }): Promise<ApiResponse> => {
+//   const [_key, { search }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/measurement/survey_reports",
+//     {
+//       params: {
+//         page: pageParam,
+//         confirm_status: "unconfirmed",
+//         page_size: 20,
+
+//         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
+
+type SurveyQueryKey = [
+  string,
+  {
+    search?: string;
+    confirm_status: "confirm" | "unconfirmed";
+  }
+];
+
+import { QueryFunctionContext } from "@tanstack/react-query";
+
 const fetchDataSurveyReport = async ({
   pageParam = 1,
-  confirm_status = "unconfirmed",
   queryKey,
-}: {
-  pageParam?: number;
-  confirm_status: string;
-  queryKey: [string, { search?: string }];
-}): Promise<ApiResponse> => {
-  const [_key, { search }] = queryKey;
+}: QueryFunctionContext<SurveyQueryKey, number>): Promise<ApiResponse> => {
+  const [_key, { search, confirm_status }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/survey_reports",
     {
       params: {
         page: pageParam,
-        confirm_status: confirm_status,
         page_size: 20,
-
+        confirm_status,
         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
       },
     }
   );
+
   return res.data;
 };
 
@@ -76,14 +105,27 @@ const UnconfirmServey = () => {
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
-      queryKey: ["dataSurveyReportUnconfirm", { search: debouncedSearchValue }],
+    useInfiniteQuery<
+      any, // kiểu dữ liệu từng page
+      Error, // kiểu lỗi
+      any, // kiểu dữ liệu sau select (nếu không dùng thì giống dòng 1)
+      SurveyQueryKey, // kiểu của queryKey
+      number // kiểu của pageParam
+    >({
+      queryKey: [
+        "dataSurveyReportUnconfirm",
+        {
+          search: debouncedSearchValue,
+          confirm_status: "unconfirmed",
+        },
+      ],
       queryFn: fetchDataSurveyReport,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
 
   const observerRef = useRef<HTMLTableRowElement | null>(null);

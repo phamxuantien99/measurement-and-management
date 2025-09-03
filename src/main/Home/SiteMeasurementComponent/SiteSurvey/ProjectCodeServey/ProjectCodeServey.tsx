@@ -22,32 +22,35 @@ const headerKey = [
   "telephone_number",
 ];
 
-interface ProjectCode {
-  project_number: string;
-  client_name: string;
-  location: string;
-  person_contact: string;
-  telephone_number: string;
-}
+// const fetchDataProjectCode = async ({
+//   pageParam = 1,
+//   queryKey,
+// }: QueryFunctionContext<
+//   [string, { search?: string }],
+//   number
+// >): Promise<ApiResponse> => {
+//   const [_key, { search }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_survey_report",
+//     {
+//       params: {
+//         page: pageParam,
+//         page_size: 20,
+//         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
 
-interface ApiResponse {
-  confirm_projects: ProjectCode[];
-  search_options: {
-    ordering: string;
-    page: number;
-    page_size: number;
-    total_count: number;
-  };
-}
+type ProjectCodeQueryKey = [string, { search?: string }];
 
 const fetchDataProjectCode = async ({
   pageParam = 1,
   queryKey,
-}: QueryFunctionContext<
-  [string, { search?: string }],
-  number
->): Promise<ApiResponse> => {
+}: QueryFunctionContext<ProjectCodeQueryKey, number>): Promise<any> => {
   const [_key, { search }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/projects_that_have_survey_report",
     {
@@ -58,6 +61,7 @@ const fetchDataProjectCode = async ({
       },
     }
   );
+
   return res.data;
 };
 
@@ -67,17 +71,24 @@ const ProjectCodeServey = () => {
   const debouncedSearchValue = useDebounce(searchQuery, 500);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
+    useInfiniteQuery<
+      any, // Dữ liệu mỗi page
+      Error, // Kiểu lỗi
+      any, // Dữ liệu sau select (nếu không dùng thì giống dòng 1)
+      ProjectCodeQueryKey, // Kiểu của queryKey
+      number // Kiểu của pageParam
+    >({
       queryKey: ["dataTotalProduct", { search: debouncedSearchValue }],
       queryFn: fetchDataProjectCode,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
 
-  const observerRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<HTMLTableRowElement | null>(null);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -106,7 +117,8 @@ const ProjectCodeServey = () => {
   const handleSearch = (value: string) => {
     setSearchQuery(value);
   };
-  const projects = data?.pages.flatMap((page) => page.confirm_projects) || [];
+  const projects =
+    data?.pages.flatMap((page: any) => page.confirm_projects) || [];
 
   return (
     <div className="p-4 bg-white shadow rounded-md">
@@ -207,7 +219,7 @@ const ProjectCodeServey = () => {
             )}
           </tbody>
         </table>
-        <div ref={observerRef} style={{ height: 40 }} />
+        <tr ref={observerRef} style={{ height: 40 }} />
         {isFetchingNextPage && (
           <div style={{ textAlign: "center", padding: 16 }}>
             <CircularProgress size={24} />

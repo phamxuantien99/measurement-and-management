@@ -32,38 +32,60 @@ const headerKey = [
   "opening_height",
 ];
 
-interface ApiResponse {
-  founds: any;
-  search_options: {
-    ordering: string;
-    page: number;
-    page_size: number;
-    total_count: number;
-  };
-}
+// const fetchDataSurveyReport = async ({
+//   pageParam = 1,
+//   confirm_status = "confirm",
+//   queryKey,
+// }: {
+//   pageParam?: number;
+//   confirm_status?: string;
+//   queryKey: [string, { search?: string }];
+// }): Promise<ApiResponse> => {
+//   const [_key, { search }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/measurement/survey_reports",
+//     {
+//       params: {
+//         page: pageParam,
+//         confirm_status: confirm_status,
+//         page_size: 20,
+
+//         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
+
+type SurveyQueryKey = [
+  string,
+  {
+    search?: string;
+    confirm_status: string;
+  }
+];
 
 const fetchDataSurveyReport = async ({
   pageParam = 1,
-  confirm_status = "confirm",
   queryKey,
 }: {
   pageParam?: number;
-  confirm_status: string;
-  queryKey: [string, { search?: string }];
-}): Promise<ApiResponse> => {
-  const [_key, { search }] = queryKey;
+  queryKey: SurveyQueryKey;
+}): Promise<any> => {
+  const [_key, { search, confirm_status }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/survey_reports",
     {
       params: {
         page: pageParam,
-        confirm_status: confirm_status,
         page_size: 20,
-
+        confirm_status,
         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
       },
     }
   );
+
   return res.data;
 };
 
@@ -77,17 +99,30 @@ const ConfirmServey = () => {
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
-      queryKey: ["dataSurveyReportConfirm", { search: debouncedSearchValue }],
+    useInfiniteQuery<
+      any, // dữ liệu mỗi trang
+      Error, // lỗi
+      any, // dữ liệu trả về (có thể khác nếu dùng select)
+      SurveyQueryKey, // kiểu queryKey
+      number // kiểu pageParam
+    >({
+      queryKey: [
+        "dataSurveyReportConfirm",
+        {
+          search: debouncedSearchValue,
+          confirm_status: "confirm",
+        },
+      ],
       queryFn: fetchDataSurveyReport,
-      getNextPageParam: (lastPage: ApiResponse) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
 
-  const observerRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<HTMLTableRowElement | null>(null);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -218,7 +253,7 @@ const ConfirmServey = () => {
       </div>
 
       {/* Loading more product  */}
-      <div ref={observerRef} style={{ height: 40 }} />
+      <tr ref={observerRef} style={{ height: 40 }} />
       {isFetchingNextPage && (
         <div style={{ textAlign: "center", padding: 16 }}>
           <CircularProgress size={24} />

@@ -42,28 +42,52 @@ const headerKey = [
   "opening_height",
 ];
 
+// const fetchDataMeasurementReport = async ({
+//   pageParam = 1,
+//   confirm_status = "unconfirmed",
+//   queryKey,
+// }: {
+//   pageParam?: number;
+//   confirm_status: string;
+//   queryKey: [string, { search?: string }];
+// }): Promise<any> => {
+//   const [_key, { search }] = queryKey;
+//   const res = await apiAxios.get(
+//     "https://ec2api.deltatech-backend.com/api/v1/measurement/measurement_report",
+//     {
+//       params: {
+//         page: pageParam,
+//         confirm_status: confirm_status,
+//         page_size: 20,
+
+//         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
+//       },
+//     }
+//   );
+//   return res.data;
+// };
+
 const fetchDataMeasurementReport = async ({
   pageParam = 1,
-  confirm_status = "unconfirmed",
   queryKey,
 }: {
   pageParam?: number;
-  confirm_status: string;
-  queryKey: [string, { search?: string }];
+  queryKey: any;
 }): Promise<any> => {
-  const [_key, { search }] = queryKey;
+  const [_key, { search, confirm_status }] = queryKey;
+
   const res = await apiAxios.get(
     "https://ec2api.deltatech-backend.com/api/v1/measurement/measurement_report",
     {
       params: {
         page: pageParam,
-        confirm_status: confirm_status,
+        confirm_status,
         page_size: 20,
-
         ...(search ? { filter_by_location_or_project_or_client: search } : {}),
       },
     }
   );
+
   return res.data;
 };
 
@@ -147,21 +171,45 @@ const UnconfirmMeasurement = () => {
     setSearchQuery(value);
   };
 
+  // const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+  //   useInfiniteQuery({
+  //     queryKey: [
+  //       "dataMeasurementReportUnconfirmed",
+  //       { search: debouncedSearchValue },
+  //     ],
+  //     queryFn: fetchDataMeasurementReport,
+  //     getNextPageParam: (lastPage: any) => {
+  //       const { page, page_size, total_count } = lastPage.search_options;
+  //       const totalPages = Math.ceil(total_count / page_size);
+  //       return page < totalPages ? page + 1 : undefined;
+  //     },
+  //   });
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
+    useInfiniteQuery<
+      any, // response mỗi page
+      Error, // error type
+      any, // select type
+      any, // queryKey type
+      number // pageParam type
+    >({
       queryKey: [
         "dataMeasurementReportUnconfirmed",
-        { search: debouncedSearchValue },
+        {
+          search: debouncedSearchValue,
+          confirm_status: "unconfirmed",
+        },
       ],
       queryFn: fetchDataMeasurementReport,
-      getNextPageParam: (lastPage: any) => {
+      getNextPageParam: (lastPage) => {
         const { page, page_size, total_count } = lastPage.search_options;
         const totalPages = Math.ceil(total_count / page_size);
         return page < totalPages ? page + 1 : undefined;
       },
+      initialPageParam: 1,
     });
 
-  const observerRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<HTMLTableRowElement | null>(null);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -262,7 +310,7 @@ const UnconfirmMeasurement = () => {
                 index === AllReportMeasurementUnconfirm.length - 1;
               return (
                 <tr
-                  key={index}
+                  key={item.id || index}
                   className="hover:bg-gray-50"
                   ref={isLastItem ? observerRef : null}
                 >
